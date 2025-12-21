@@ -1,0 +1,36 @@
+# ---------------- Gradle ----------------
+.gradle/
+build/
+
+# ---------------- Android Studio ----------------
+.idea/
+*.iml
+
+# ---------------- Local config ----------------
+local.properties
+
+# ---------------- Build outputs ----------------
+*.apk
+*.aab
+
+# ---------------- Native build ----------------
+.externalNativeBuild/
+.cxx/
+
+# ---------------- Captures ----------------
+captures/
+
+# ---------------- OS ----------------
+.DS_Store
+Thumbs.db
+
+# ---------------- Logs ----------------
+*.log
+
+# ---------------- Keystore (VERY IMPORTANT) ----------------
+*.jks
+*.keystore
+
+# ---------------- Firebase / Secrets ----------------
+google-services.json
+
