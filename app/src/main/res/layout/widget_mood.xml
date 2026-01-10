@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:gravity="center">
+
+    <!-- Header Row -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_title"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_streak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/widget_streak_background"
+            android:paddingHorizontal="5dp"
+            android:paddingVertical="1dp"
+            android:text="🔥0"
+            android:textColor="#FF6B6B"
+            android:textSize="9sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Today's Emoji -->
+    <FrameLayout
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/widget_today_background">
+
+        <TextView
+            android:id="@+id/widget_today_emoji"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="➕"
+            android:textSize="26sp"
+            android:gravity="center" />
+    </FrameLayout>
+
+    <!-- Date Text -->
+    <TextView
+        android:id="@+id/widget_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:text="@string/widget_date_placeholder"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="9sp" />
+
+    <!-- Past Days Row -->
+    <LinearLayout
+        android:id="@+id/widget_week_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/widget_day_1"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_margin="1dp"
+            android:background="@drawable/widget_day_background"
+            android:gravity="center"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_day_2"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_margin="1dp"
+            android:background="@drawable/widget_day_background"
+            android:gravity="center"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_day_3"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_margin="1dp"
+            android:background="@drawable/widget_day_background"
+            android:gravity="center"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_day_4"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_margin="1dp"
+            android:background="@drawable/widget_day_background"
+            android:gravity="center"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/widget_day_5"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_margin="1dp"
+            android:background="@drawable/widget_day_background"
+            android:gravity="center"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</LinearLayout>

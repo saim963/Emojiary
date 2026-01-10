@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Widget Colors (Dark Theme) -->
+    <color name="widget_background">#CC1A1A1A</color>
+    <color name="widget_cell_background">#25FFFFFF</color>
+    <color name="widget_today_background">#804ECDC4</color>
+
+</resources>
