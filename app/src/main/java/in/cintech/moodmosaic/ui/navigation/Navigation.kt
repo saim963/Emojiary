@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import `in`.cintech.moodmosaic.data.local.ThemeMode
 import `in`.cintech.moodmosaic.ui.screens.home.HomeScreen
 import `in`.cintech.moodmosaic.ui.screens.yearreview.YearReviewScreen
 import java.time.Year
@@ -20,7 +21,6 @@ sealed class Screen(val route: String) {
         fun createRoute(year: Int) = "year_review/$year"
     }
 
-    // Keep for future use if needed
     data object MoodDetail : Screen("mood/{date}") {
         fun createRoute(date: String) = "mood/$date"
     }
@@ -29,8 +29,9 @@ sealed class Screen(val route: String) {
 @Composable
 fun MoodMosaicNavigation(
     navController: NavHostController = rememberNavController(),
-    isDarkMode: Boolean = true,           // ✅ NEW
-    onToggleTheme: () -> Unit = {}        // ✅ NEW
+    themeMode: ThemeMode = ThemeMode.SYSTEM,  // ✅ Theme mode
+    isDarkMode: Boolean = false,               // ✅ Actual dark mode state
+    onCycleTheme: () -> Unit = {}              // ✅ Cycle through themes
 ) {
     NavHost(
         navController = navController,
@@ -52,14 +53,15 @@ fun MoodMosaicNavigation(
                     slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
         }
     ) {
-        // Home Screen (Month View Only)
+        // Home Screen
         composable(Screen.Home.route) {
             HomeScreen(
                 onNavigateToYearReview = { year ->
                     navController.navigate(Screen.YearReview.createRoute(year))
                 },
-                isDarkMode = isDarkMode,         // ✅ Pass to HomeScreen
-                onToggleTheme = onToggleTheme    // ✅ Pass to HomeScreen
+                themeMode = themeMode,
+                isDarkMode = isDarkMode,
+                onCycleTheme = onCycleTheme
             )
         }
 
@@ -78,7 +80,7 @@ fun MoodMosaicNavigation(
             YearReviewScreen(
                 year = year,
                 onBackClick = { navController.popBackStack() },
-                isDarkMode = isDarkMode          // ✅ Pass to YearReviewScreen
+                isDarkMode = isDarkMode
             )
         }
     }

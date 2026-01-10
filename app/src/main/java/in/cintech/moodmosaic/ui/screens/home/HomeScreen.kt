@@ -1,5 +1,9 @@
 package `in`.cintech.moodmosaic.ui.screens.home
 
+import `in`.cintech.moodmosaic.data.local.ThemeMode
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,12 +34,14 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToYearReview: (Int) -> Unit,  // ✅ NEW: Navigation callback
-    isDarkMode: Boolean = true,              // ✅ NEW
-    onToggleTheme: () -> Unit = {},          // ✅ NEW
+    onNavigateToYearReview: (Int) -> Unit,
+    themeMode: ThemeMode = ThemeMode.SYSTEM,  // ✅ Theme mode
+    isDarkMode: Boolean = false,               // ✅ No default to dark
+    onCycleTheme: () -> Unit = {},             // ✅ Cycle theme
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -45,8 +51,8 @@ fun HomeScreen(
                 onNextMonth = { viewModel.changeMonth(1) },
                 onYearReviewClick = { onNavigateToYearReview(uiState.currentYearMonth.year) },
                 onShare = viewModel::showShareDialog,
-                isDarkMode = isDarkMode,              // ✅ NEW
-                onToggleTheme = onToggleTheme,          // ✅ NEW
+                themeMode = themeMode,
+                onCycleTheme = onCycleTheme
             )
         },
         floatingActionButton = {
@@ -90,11 +96,19 @@ fun HomeScreen(
             }
 
             // ✅ SIMPLIFIED: Only Month Grid (no ViewMode switching)
+            // Month Grid with non-editable callback
             item {
                 MoodGrid(
                     moods = uiState.moods,
                     yearMonth = uiState.currentYearMonth,
                     onMoodClick = viewModel::onDateSelected,
+                    onNonEditableClick = { date ->  // ✅ Handle non-editable click
+                        Toast.makeText(
+                            context,
+                            "You can only edit moods from the last 3 days",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
             }
@@ -196,73 +210,80 @@ private fun HomeTopBar(
     currentYearMonth: YearMonth,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onYearReviewClick: () -> Unit, // ✅ NEW: Year review callback
-    isDarkMode: Boolean,  // ✅ NEW
-    onToggleTheme: () -> Unit,  // ✅ NEW
-    onShare: () -> Unit
-) {
-    TopAppBar(
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onPreviousMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous"
-                    )
-                }
+    onYearReviewClick: () -> Unit,
+    onShare: () -> Unit,
+    themeMode: ThemeMode,    // ✅ Theme mode
+    onCycleTheme: () -> Unit // ✅ Cycle theme
+) {TopAppBar(
+    title = {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onPreviousMonth) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous"
+                )
+            }
 
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = currentYearMonth.month.getDisplayName(
-                            TextStyle.FULL,
-                            Locale.getDefault()
-                        ),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = currentYearMonth.year.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = currentYearMonth.month.getDisplayName(
+                        TextStyle.FULL,
+                        Locale.getDefault()
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = currentYearMonth.year.toString(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
 
-                IconButton(onClick = onNextMonth) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next"
-                    )
+            IconButton(onClick = onNextMonth) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = "Next"
+                )
+            }
+        }
+    },
+    actions = {
+        // ✅ Theme Toggle Button with correct icon
+        IconButton(onClick = onCycleTheme) {
+            Icon(
+                imageVector = when (themeMode) {
+                    ThemeMode.SYSTEM -> Icons.Default.Brightness6  // Auto icon
+                    ThemeMode.LIGHT -> Icons.Default.LightMode     // Sun icon
+                    ThemeMode.DARK -> Icons.Default.DarkMode       // Moon icon
+                },
+                contentDescription = when (themeMode) {
+                    ThemeMode.SYSTEM -> "System Theme (tap to change)"
+                    ThemeMode.LIGHT -> "Light Theme (tap to change)"
+                    ThemeMode.DARK -> "Dark Theme (tap to change)"
                 }
-            }
-        },
-        actions = {
-            // ✅ NEW: Theme Toggle Button
-            IconButton(onClick = onToggleTheme) {
-                Icon(
-                    imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                    contentDescription = if (isDarkMode) "Switch to Light Mode" else "Switch to Dark Mode"
-                )
-            }
-            // ✅ CHANGED: Year Review button instead of toggle
-            IconButton(onClick = onYearReviewClick) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = "Year Review"
-                )
-            }
-            IconButton(onClick = onShare) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Share"
-                )
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background
-        )
+            )
+        }
+
+        IconButton(onClick = onYearReviewClick) {
+            Icon(
+                imageVector = Icons.Default.CalendarMonth,
+                contentDescription = "Year Review"
+            )
+        }
+        IconButton(onClick = onShare) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "Share"
+            )
+        }
+    },
+    colors = TopAppBarDefaults.topAppBarColors(
+        containerColor = MaterialTheme.colorScheme.background
     )
+)
 }
 
 @Composable

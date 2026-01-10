@@ -123,6 +123,20 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onDateSelected(date: LocalDate) {
+        // ✅ Validate date is editable
+        val today = LocalDate.now()
+        val threeDaysAgo = today.minusDays(3)
+
+        if (date.isAfter(today)) {
+            // Future date - don't allow
+            return
+        }
+
+        if (date.isBefore(threeDaysAgo)) {
+            // More than 3 days ago - don't allow
+            return
+        }
+
         viewModelScope.launch {
             val existingMood = repository.getMoodByDate(date)
             _uiState.update {

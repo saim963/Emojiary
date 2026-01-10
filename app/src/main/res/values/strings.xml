@@ -2,4 +2,7 @@
     <string name="app_name">Mood Mosaic</string>
     <string name="widget_description">Track your daily mood from home screen</string>
     <string name="widget_name">Mood Mosaic</string>
+
+    <string name="widget_title">How are you?</string>
+    <string name="widget_date_placeholder">Loading...</string>
 </resources>

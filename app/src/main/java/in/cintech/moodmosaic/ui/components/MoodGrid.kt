@@ -15,13 +15,20 @@ import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.*
 
+private fun isDateEditable(date: LocalDate): Boolean {
+    val today = LocalDate.now()
+    val threeDaysAgo = today.minusDays(3)
+    return !date.isAfter(today) && !date.isBefore(threeDaysAgo)
+}
+
 @Composable
 fun MoodGrid(
+    modifier: Modifier = Modifier,
     moods: List<MoodEntry>,
     yearMonth: YearMonth,
     pixelSize: Dp = 44.dp,
     onMoodClick: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
+    onNonEditableClick: ((LocalDate) -> Unit)? = null  // ✅ NEW: Optional callback
 ) {
     val today = LocalDate.now()
     val daysInMonth = yearMonth.lengthOfMonth()
@@ -103,6 +110,7 @@ fun MoodGrid(
                                 val date = yearMonth.atDay(dayIndex + 1)
                                 val mood = moodMap[date]
                                 val isToday = date == today
+                                val isEditable = isDateEditable(date)
                                 val animationDelay = cellIndex * 30
 
                                 MoodPixel(
@@ -110,8 +118,15 @@ fun MoodGrid(
                                     date = date,
                                     size = pixelSize,
                                     isToday = isToday,
+                                    isEditable = isEditable,
                                     animationDelay = animationDelay,
-                                    onClick = { onMoodClick(date) }
+                                    onClick = {
+                                        if (isEditable) {
+                                            onMoodClick(date)
+                                        } else {
+                                            onNonEditableClick?.invoke(date)  // ✅ Safe call
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -121,5 +136,3 @@ fun MoodGrid(
         }
     }
 }
-
-// ✅ REMOVED: YearMosaicGrid (moved to YearReviewScreen)

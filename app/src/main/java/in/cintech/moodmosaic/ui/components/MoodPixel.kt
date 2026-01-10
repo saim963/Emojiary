@@ -11,9 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -26,8 +25,9 @@ import java.time.LocalDate
 fun MoodPixel(
     mood: MoodEntry?,
     date: LocalDate,
-    size: Dp = 48.dp,
-    isToday: Boolean = false,
+    size: Dp,
+    isToday: Boolean,
+    isEditable: Boolean = true,  // ✅ NEW parameter
     animationDelay: Int = 0,
     onClick: () -> Unit
 ) {
@@ -44,66 +44,65 @@ fun MoodPixel(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
         ),
-        label = "pixel_scale"
+        label = "scale"
     )
 
-    val infiniteTransition = rememberInfiniteTransition(label = "today_pulse")
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
+    val backgroundColor = when {
+        mood != null -> mood.color
+        isToday -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val borderColor = when {
+        isToday -> MaterialTheme.colorScheme.primary
+        else -> Color.Transparent
+    }
+
+    // ✅ Reduce alpha for non-editable past days (without mood)
+    val alpha = when {
+        mood != null -> 1f  // Always show moods clearly
+        isEditable -> 1f    // Editable days are fully visible
+        else -> 0.4f        // Non-editable empty days are dimmed
+    }
 
     Box(
         modifier = Modifier
             .size(size)
-            .scale(scale * if (isToday && mood == null) pulseScale else 1f)
+            .alpha(alpha)  // ✅ Apply alpha
             .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
             .then(
                 if (isToday) {
                     Modifier.border(
                         width = 2.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary
-                            )
-                        ),
+                        color = borderColor,
                         shape = RoundedCornerShape(8.dp)
                     )
                 } else Modifier
             )
-            .background(
-                mood?.color ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
-            .clickable(onClick = onClick),
+            .clickable(enabled = isEditable) { onClick() },  // ✅ Only clickable if editable
         contentAlignment = Alignment.Center
     ) {
         if (mood != null) {
             Text(
                 text = mood.emoji,
-                fontSize = (size.value * 0.5f).sp,
+                fontSize = (size.value * 0.45f).sp,
                 textAlign = TextAlign.Center
             )
         } else {
             Text(
                 text = date.dayOfMonth.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                textAlign = TextAlign.Center
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                    alpha = if (isEditable) 0.7f else 0.4f  // ✅ Dimmer text for non-editable
+                )
             )
         }
     }
 }
 
 @Composable
-fun EmptyPixel(
-    size: Dp = 48.dp
-) {
+fun EmptyPixel(size: Dp) {
     Box(
         modifier = Modifier
             .size(size)
