@@ -58,6 +58,7 @@ private fun MosaicPreview(bitmap: Bitmap) {
 fun ShareMosaicDialog(
     moods: List<MoodEntry>,
     yearMonth: YearMonth,
+    isDarkMode: Boolean = true,    // ✅ NEW
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -72,7 +73,8 @@ fun ShareMosaicDialog(
             bitmap = MosaicImageGenerator.generateMonthMosaic(
                 moods = moods,
                 yearMonth = yearMonth,
-                context = context
+                context = context,
+                isDarkMode = isDarkMode    // ✅ Pass theme
             )
             isLoading = false
         }
@@ -199,6 +201,7 @@ private suspend fun shareImage(
     yearMonth: YearMonth
 ) = withContext(Dispatchers.IO) {
     try {
+        // ✅ FIX: Use cache directory with correct path
         val cachePath = File(context.cacheDir, "images")
         cachePath.mkdirs()
 
@@ -215,6 +218,7 @@ private suspend fun shareImage(
             file
         )
 
+        // ✅ FIX: Use Intent.createChooser with proper flags
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "image/png"
             putExtra(Intent.EXTRA_STREAM, uri)
@@ -229,9 +233,25 @@ private suspend fun shareImage(
         }
 
         withContext(Dispatchers.Main) {
-            context.startActivity(
-                Intent.createChooser(shareIntent, "Share your Mood Mosaic")
+            // ✅ FIX: Create chooser and grant permission to all apps
+            val chooser = Intent.createChooser(shareIntent, "Share your Mood Mosaic")
+
+            // Grant permission to all apps that can handle this intent
+            val resInfoList = context.packageManager.queryIntentActivities(
+                chooser,
+                android.content.pm.PackageManager.MATCH_DEFAULT_ONLY
             )
+
+            for (resolveInfo in resInfoList) {
+                val packageName = resolveInfo.activityInfo.packageName
+                context.grantUriPermission(
+                    packageName,
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
+
+            context.startActivity(chooser)
         }
     } catch (e: Exception) {
         e.printStackTrace()

@@ -14,17 +14,59 @@ object MosaicImageGenerator {
     private const val PADDING = 60
     private const val CORNER_RADIUS = 20f
 
+    // ✅ NEW: Helper function to get theme colors
+    private fun getColors(isDarkMode: Boolean): ThemeColors {
+        return if (isDarkMode) {
+            ThemeColors(
+                background = "#1A1A1A",
+                backgroundDeep = "#0D0D0D",
+                surface = "#2D2D2D",
+                textPrimary = "#FFFFFF",
+                textSecondary = "#888888",
+                textTertiary = "#666666",
+                textMuted = "#555555",
+                footer = "#444444"
+            )
+        } else {
+            ThemeColors(
+                background = "#FAFAFA",
+                backgroundDeep = "#FFFFFF",
+                surface = "#E0E0E0",
+                textPrimary = "#1A1A1A",
+                textSecondary = "#666666",
+                textTertiary = "#888888",
+                textMuted = "#AAAAAA",
+                footer = "#999999"
+            )
+        }
+    }
+
+    // ✅ NEW: Data class for theme colors
+    private data class ThemeColors(
+        val background: String,
+        val backgroundDeep: String,
+        val surface: String,
+        val textPrimary: String,
+        val textSecondary: String,
+        val textTertiary: String,
+        val textMuted: String,
+        val footer: String
+    )
+
     fun generateMonthMosaic(
         moods: List<MoodEntry>,
         yearMonth: YearMonth,
-        context: Context
+        context: Context,
+        isDarkMode: Boolean = true    // ✅ NEW parameter
     ): Bitmap {
+        val colors = getColors(isDarkMode)    // ✅ Get theme colors
+
         val bitmap = Bitmap.createBitmap(IMAGE_SIZE, IMAGE_SIZE, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         // Background
-        paint.color = Color.parseColor("#1A1A1A")
+        paint.color = Color.parseColor(colors.background)    // ✅ Use theme
         canvas.drawRect(0f, 0f, IMAGE_SIZE.toFloat(), IMAGE_SIZE.toFloat(), paint)
 
         // Draw decorative gradient border
@@ -49,7 +91,7 @@ object MosaicImageGenerator {
 
         // Title
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor(colors.textPrimary)    // ✅ Use theme
             textSize = 48f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
@@ -65,7 +107,7 @@ object MosaicImageGenerator {
 
         // Subtitle
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#888888")
+            color = Color.parseColor(colors.textSecondary)    // ✅ Use theme
             textSize = 24f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             textAlign = Paint.Align.CENTER
@@ -92,7 +134,7 @@ object MosaicImageGenerator {
 
         // Day headers
         val dayHeaderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#666666")
+            color = Color.parseColor(colors.textTertiary)    // ✅ Use theme
             textSize = 20f
             textAlign = Paint.Align.CENTER
         }
@@ -145,12 +187,12 @@ object MosaicImageGenerator {
                         )
                     } else {
                         // Empty cell
-                        cellPaint.color = Color.parseColor("#2D2D2D")
+                        cellPaint.color = Color.parseColor(colors.surface)    // ✅ Use theme
                         canvas.drawRoundRect(rect, CORNER_RADIUS, CORNER_RADIUS, cellPaint)
 
                         // Day number
                         textPaint.textSize = 18f
-                        textPaint.color = Color.parseColor("#555555")
+                        textPaint.color = Color.parseColor(colors.textMuted)    // ✅ Use theme
                         canvas.drawText(
                             dayCounter.toString(),
                             left + (cellSize - cellPadding * 2) / 2,
@@ -166,7 +208,7 @@ object MosaicImageGenerator {
 
         // Footer / Branding
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#444444")
+            color = Color.parseColor(colors.footer)    // ✅ Use theme
             textSize = 18f
             textAlign = Paint.Align.CENTER
         }
@@ -183,8 +225,11 @@ object MosaicImageGenerator {
     fun generateYearMosaic(
         moods: List<MoodEntry>,
         year: Int,
-        context: Context
+        context: Context,
+        isDarkMode: Boolean = true    // ✅ NEW parameter
     ): Bitmap {
+        val colors = getColors(isDarkMode)    // ✅ Get theme colors
+
         val width = 1080
         val height = 1920
 
@@ -193,12 +238,12 @@ object MosaicImageGenerator {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
         // Background
-        paint.color = Color.parseColor("#0D0D0D")
+        paint.color = Color.parseColor(colors.backgroundDeep)    // ✅ Use theme
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
         // Title
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
+            color = Color.parseColor(colors.textPrimary)    // ✅ Use theme
             textSize = 64f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
@@ -207,7 +252,7 @@ object MosaicImageGenerator {
 
         // Subtitle
         val subtitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#888888")
+            color = Color.parseColor(colors.textSecondary)    // ✅ Use theme
             textSize = 28f
             textAlign = Paint.Align.CENTER
         }
@@ -247,14 +292,14 @@ object MosaicImageGenerator {
 
             val rect = RectF(left, top, left + size, top + size)
 
-            cellPaint.color = mood?.color?.toArgb() ?: Color.parseColor("#2D2D2D")
+            cellPaint.color = mood?.color?.toArgb() ?: Color.parseColor(colors.surface)    // ✅ Use theme
             canvas.drawRoundRect(rect, 4f, 4f, cellPaint)
         }
 
         // Legend
         val legendTop = gridTop + (rows * cellSize) + 60
         val legendPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#888888")
+            color = Color.parseColor(colors.textSecondary)    // ✅ Use theme
             textSize = 22f
             textAlign = Paint.Align.LEFT
         }
@@ -264,7 +309,7 @@ object MosaicImageGenerator {
 
         // Footer
         val footerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#444444")
+            color = Color.parseColor(colors.footer)    // ✅ Use theme
             textSize = 20f
             textAlign = Paint.Align.CENTER
         }

@@ -1,12 +1,14 @@
 package `in`.cintech.moodmosaic.ui.screens.home
 
+import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import `in`.cintech.moodmosaic.data.repository.MoodRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import `in`.cintech.moodmosaic.domain.model.MoodEntry
 import `in`.cintech.moodmosaic.domain.model.toDomain
 import `in`.cintech.moodmosaic.domain.model.toEntity
+import `in`.cintech.moodmosaic.widget.MoodWidgetStateHelper
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -23,17 +25,13 @@ data class HomeUiState(
     val selectedDate: LocalDate? = null,
     val selectedMood: MoodEntry? = null,
     val showAddMoodSheet: Boolean = false,
-    val showShareDialog: Boolean = false,
-    val viewMode: ViewMode = ViewMode.MONTH
+    val showShareDialog: Boolean = false
 )
-
-enum class ViewMode {
-    MONTH, YEAR
-}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: MoodRepository
+    private val repository: MoodRepository,
+    private val application: Application  // ✅ Inject Application
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -46,23 +44,16 @@ class HomeViewModel @Inject constructor(
 
     private fun loadMoods() {
         viewModelScope.launch {
-            combine(
-                repository.getMoodsByMonth(_uiState.value.currentYearMonth),
-                repository.getMoodsByYear(_uiState.value.currentYearMonth.year)
-            ) { monthMoods, yearMoods ->
-                val moods = when (_uiState.value.viewMode) {
-                    ViewMode.MONTH -> monthMoods
-                    ViewMode.YEAR -> yearMoods
+            repository.getMoodsByMonth(_uiState.value.currentYearMonth)
+                .map { moods -> moods.map { it.toDomain() } }
+                .collect { moods ->
+                    _uiState.update {
+                        it.copy(
+                            moods = moods,
+                            isLoading = false
+                        )
+                    }
                 }
-                moods.map { it.toDomain() }
-            }.collect { moods ->
-                _uiState.update {
-                    it.copy(
-                        moods = moods,
-                        isLoading = false
-                    )
-                }
-            }
         }
     }
 
@@ -79,7 +70,6 @@ class HomeViewModel @Inject constructor(
                         currentStreak++
                         checkDate = checkDate.minusDays(1)
                     } else if (mood.date == checkDate.minusDays(1)) {
-                        // Allow checking yesterday if today not logged yet
                         if (currentStreak == 0) {
                             checkDate = mood.date
                             currentStreak++
@@ -132,18 +122,6 @@ class HomeViewModel @Inject constructor(
         loadMoods()
     }
 
-    fun toggleViewMode() {
-        _uiState.update {
-            it.copy(
-                viewMode = when (it.viewMode) {
-                    ViewMode.MONTH -> ViewMode.YEAR
-                    ViewMode.YEAR -> ViewMode.MONTH
-                }
-            )
-        }
-        loadMoods()
-    }
-
     fun onDateSelected(date: LocalDate) {
         viewModelScope.launch {
             val existingMood = repository.getMoodByDate(date)
@@ -169,6 +147,9 @@ class HomeViewModel @Inject constructor(
             }
             loadMoods()
             calculateStats()
+
+            // ✅ Update widget
+            MoodWidgetStateHelper.updateWidget(application)
         }
     }
 
@@ -184,6 +165,9 @@ class HomeViewModel @Inject constructor(
             }
             loadMoods()
             calculateStats()
+
+            // ✅ Update widget
+            MoodWidgetStateHelper.updateWidget(application)
         }
     }
 

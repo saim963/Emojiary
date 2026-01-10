@@ -26,7 +26,7 @@ fun MoodGrid(
     val today = LocalDate.now()
     val daysInMonth = yearMonth.lengthOfMonth()
     val firstDayOfMonth = yearMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7 // Sunday = 0
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value % 7
 
     val moodMap = remember(moods) {
         moods.associateBy { it.date }
@@ -98,10 +98,8 @@ fun MoodGrid(
 
                         Box(modifier = Modifier.weight(1f)) {
                             if (cellIndex < firstDayOfWeek || dayIndex >= daysInMonth) {
-                                // Empty cell
                                 EmptyPixel(size = pixelSize)
                             } else {
-                                // Actual day - ✅ FIXED: Removed AnimatedVisibility
                                 val date = yearMonth.atDay(dayIndex + 1)
                                 val mood = moodMap[date]
                                 val isToday = date == today
@@ -124,64 +122,4 @@ fun MoodGrid(
     }
 }
 
-@Composable
-fun YearMosaicGrid(
-    moods: List<MoodEntry>,
-    year: Int,
-    pixelSize: Dp = 12.dp,
-    onMoodClick: (LocalDate) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val moodMap = remember(moods) {
-        moods.associateBy { it.date }
-    }
-
-    val startDate = LocalDate.of(year, 1, 1)
-    val endDate = LocalDate.of(year, 12, 31)
-    val totalDays = startDate.until(endDate).days + 1
-
-    Column(modifier = modifier) {
-        Text(
-            text = "Year in Pixels",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        val columns = 20
-        val rows = (totalDays + columns - 1) / columns
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            modifier = Modifier.padding(4.dp)
-        ) {
-            for (rowIndex in 0 until rows) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    for (columnIndex in 0 until columns) {
-                        val index = rowIndex * columns + columnIndex
-
-                        if (index < totalDays) {
-                            val date = startDate.plusDays(index.toLong())
-                            val mood = moodMap[date]
-                            val isToday = date == LocalDate.now()
-
-                            MoodPixel(
-                                mood = mood,
-                                date = date,
-                                size = pixelSize,
-                                isToday = isToday,
-                                animationDelay = index * 5,
-                                onClick = { onMoodClick(date) }
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.size(pixelSize))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
+// ✅ REMOVED: YearMosaicGrid (moved to YearReviewScreen)

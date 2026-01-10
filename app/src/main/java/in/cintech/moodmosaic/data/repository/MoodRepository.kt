@@ -2,7 +2,10 @@ package `in`.cintech.moodmosaic.data.repository
 
 import `in`.cintech.moodmosaic.data.local.MoodDao
 import `in`.cintech.moodmosaic.data.local.MoodEntity
+import `in`.cintech.moodmosaic.domain.model.MoodEntry
+import `in`.cintech.moodmosaic.domain.model.toDomain
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.time.YearMonth
 import javax.inject.Inject
@@ -28,6 +31,12 @@ class MoodRepository @Inject constructor(
 
     fun getMoodsByMonth(yearMonth: YearMonth): Flow<List<MoodEntity>> =
         moodDao.getMoodsByMonth(yearMonth.toString())
+
+    // ✅ NEW: Get moods between dates (for Year Review)
+    fun getMoodsBetweenDates(startDate: LocalDate, endDate: LocalDate): Flow<List<MoodEntry>> =
+        moodDao.getMoodsInRange(startDate, endDate).map { entities ->
+            entities.map { it.toDomain() }
+        }
 
     suspend fun saveMood(mood: MoodEntity) = moodDao.insertMood(mood)
 

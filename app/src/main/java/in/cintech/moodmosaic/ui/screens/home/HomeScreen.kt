@@ -1,13 +1,11 @@
 package `in`.cintech.moodmosaic.ui.screens.home
 
 import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -16,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -33,6 +30,9 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    onNavigateToYearReview: (Int) -> Unit,  // ✅ NEW: Navigation callback
+    isDarkMode: Boolean = true,              // ✅ NEW
+    onToggleTheme: () -> Unit = {},          // ✅ NEW
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -41,11 +41,12 @@ fun HomeScreen(
         topBar = {
             HomeTopBar(
                 currentYearMonth = uiState.currentYearMonth,
-                viewMode = uiState.viewMode,
                 onPreviousMonth = { viewModel.changeMonth(-1) },
                 onNextMonth = { viewModel.changeMonth(1) },
-                onToggleViewMode = viewModel::toggleViewMode,
-                onShare = viewModel::showShareDialog
+                onYearReviewClick = { onNavigateToYearReview(uiState.currentYearMonth.year) },
+                onShare = viewModel::showShareDialog,
+                isDarkMode = isDarkMode,              // ✅ NEW
+                onToggleTheme = onToggleTheme,          // ✅ NEW
             )
         },
         floatingActionButton = {
@@ -62,57 +63,52 @@ fun HomeScreen(
             }
         }
     ) { paddingValues ->
-        Column(
+
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
+                .padding(paddingValues),
+            contentPadding = PaddingValues(bottom = 100.dp)
         ) {
             // Stats Cards
-            AnimatedVisibility(
-                visible = !uiState.isLoading,
-                enter = fadeIn() + slideInVertically()
-            ) {
-                StatsRow(
-                    totalMoods = uiState.totalMoodCount,
-                    currentStreak = uiState.currentStreak,
-                    longestStreak = uiState.longestStreak,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Main Grid
-            AnimatedContent(
-                targetState = uiState.viewMode,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(300)) togetherWith
-                            fadeOut(animationSpec = tween(300))
-                },
-                label = "view_mode_transition"
-            ) { viewMode ->
-                when (viewMode) {
-                    ViewMode.MONTH -> {
-                        MoodGrid(
-                            moods = uiState.moods,
-                            yearMonth = uiState.currentYearMonth,
-                            onMoodClick = viewModel::onDateSelected,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        )
-                    }
-                    ViewMode.YEAR -> {
-                        YearMosaicGrid(
-                            moods = uiState.moods,
-                            year = uiState.currentYearMonth.year,
-                            onMoodClick = viewModel::onDateSelected,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-                    }
+            item {
+                AnimatedVisibility(
+                    visible = !uiState.isLoading,
+                    enter = fadeIn() + slideInVertically()
+                ) {
+                    StatsRow(
+                        totalMoods = uiState.totalMoodCount,
+                        currentStreak = uiState.currentStreak,
+                        longestStreak = uiState.longestStreak,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(100.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // ✅ SIMPLIFIED: Only Month Grid (no ViewMode switching)
+            item {
+                MoodGrid(
+                    moods = uiState.moods,
+                    yearMonth = uiState.currentYearMonth,
+                    onMoodClick = viewModel::onDateSelected,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            // ✅ NEW: Year Review Button
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+
+                YearReviewCard(
+                    year = uiState.currentYearMonth.year,
+                    onClick = { onNavigateToYearReview(uiState.currentYearMonth.year) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
 
         // Add/Edit Mood Sheet
@@ -133,7 +129,62 @@ fun HomeScreen(
             ShareMosaicDialog(
                 moods = uiState.moods,
                 yearMonth = uiState.currentYearMonth,
+                isDarkMode = isDarkMode,
                 onDismiss = viewModel::dismissShareDialog
+            )
+        }
+    }
+}
+
+// ✅ NEW: Year Review Card Component
+@Composable
+private fun YearReviewCard(
+    year: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(28.dp)
+                )
+                Column {
+                    Text(
+                        text = "$year Year in Pixels",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "View your entire year's mood journey",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Go",
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
             )
         }
     }
@@ -143,10 +194,11 @@ fun HomeScreen(
 @Composable
 private fun HomeTopBar(
     currentYearMonth: YearMonth,
-    viewMode: ViewMode,
     onPreviousMonth: () -> Unit,
     onNextMonth: () -> Unit,
-    onToggleViewMode: () -> Unit,
+    onYearReviewClick: () -> Unit, // ✅ NEW: Year review callback
+    isDarkMode: Boolean,  // ✅ NEW
+    onToggleTheme: () -> Unit,  // ✅ NEW
     onShare: () -> Unit
 ) {
     TopAppBar(
@@ -186,13 +238,18 @@ private fun HomeTopBar(
             }
         },
         actions = {
-            IconButton(onClick = onToggleViewMode) {
+            // ✅ NEW: Theme Toggle Button
+            IconButton(onClick = onToggleTheme) {
                 Icon(
-                    imageVector = when (viewMode) {
-                        ViewMode.MONTH -> Icons.Default.DateRange
-                        ViewMode.YEAR -> Icons.Default.CalendarMonth
-                    },
-                    contentDescription = "Toggle View"
+                    imageVector = if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = if (isDarkMode) "Switch to Light Mode" else "Switch to Dark Mode"
+                )
+            }
+            // ✅ CHANGED: Year Review button instead of toggle
+            IconButton(onClick = onYearReviewClick) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = "Year Review"
                 )
             }
             IconButton(onClick = onShare) {

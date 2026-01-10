@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Mood Mosaic</string>
+    <string name="widget_description">Track your daily mood from home screen</string>
+    <string name="widget_name">Mood Mosaic</string>
 </resources>
