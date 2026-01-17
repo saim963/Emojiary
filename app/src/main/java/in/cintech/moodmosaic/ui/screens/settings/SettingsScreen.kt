@@ -1,5 +1,6 @@
 package `in`.cintech.moodmosaic.ui.screens.settings
 
+import android.app.Activity
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,8 +20,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import `in`.cintech.moodmosaic.data.local.ThemeMode
 import `in`.cintech.moodmosaic.utils.BackupManager
+import `in`.cintech.moodmosaic.ui.screens.settings.SettingsViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,7 +33,9 @@ fun SettingsScreen(
     themeMode: ThemeMode,
     onCycleTheme: () -> Unit,
     notificationsEnabled: Boolean,
-    onToggleNotifications: (Boolean) -> Unit
+    onToggleNotifications: (Boolean) -> Unit,
+    // Add ViewModel
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -59,6 +64,9 @@ fun SettingsScreen(
             }
         }
     }
+
+    // Collect products
+    val donationProducts by viewModel.products.collectAsState()
 
     Scaffold(
         topBar = {
@@ -203,6 +211,23 @@ fun SettingsScreen(
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
                 }
+            }
+
+            // ✅ NEW: Support Development Section
+            SettingsSection(title = "Support") {
+                SettingsItem(
+                    icon = Icons.Default.Favorite,
+                    title = "Buy me a coffee ☕",
+                    subtitle = "Support app development",
+                    onClick = {
+                        val product = donationProducts.find { it.productId == "donation_coffee" }
+                        if (product != null) {
+                            viewModel.purchaseDonation(context as Activity, product)
+                        } else {
+                            Toast.makeText(context, "Store not ready yet", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
             }
 
             // About Section

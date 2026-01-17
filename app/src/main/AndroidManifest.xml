@@ -9,6 +9,9 @@
     <!-- Add notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Add Billing permission -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
     <application
         android:name=".MoodMosaicApp"
         android:allowBackup="true"
