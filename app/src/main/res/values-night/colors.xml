@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <color name="splash_background">#0D0D0D</color>
     <!-- Widget Colors (Dark Theme) -->
     <color name="widget_background">#CC1A1A1A</color>
     <color name="widget_cell_background">#25FFFFFF</color>

@@ -30,6 +30,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DateTextStyle
 import java.util.*
+import androidx.glance.action.actionParametersOf
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.action.ActionParameters
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -159,7 +162,14 @@ fun MoodWidgetContent(data: WidgetData, isDarkMode: Boolean = false) {
             .wrapContentSize()
             .cornerRadius(20.dp)
             .background(backgroundColor)
-            .clickable(actionStartActivity<MainActivity>())
+//            .clickable(actionStartActivity<MainActivity>())
+            .clickable(
+                actionStartActivity<MainActivity>(
+                    actionParametersOf(
+                        ActionParameters.Key<Boolean>("IS_WIDGET_LAUNCH") to true
+                    )
+                )
+            )
             .padding(10.dp)
     ) {
         Column(
