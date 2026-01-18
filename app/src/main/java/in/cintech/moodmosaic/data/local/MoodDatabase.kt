@@ -17,7 +17,7 @@ abstract class MoodDatabase : RoomDatabase() {
     abstract fun moodDao(): MoodDao
 
     companion object {
-        const val DATABASE_NAME = "mood_mosaic_db"
+        const val DATABASE_NAME = "daymoji_db"
 
         @Volatile
         private var INSTANCE: MoodDatabase? = null

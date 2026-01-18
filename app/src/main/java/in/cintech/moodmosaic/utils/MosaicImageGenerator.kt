@@ -113,7 +113,7 @@ object MosaicImageGenerator {
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText(
-            "Mood Mosaic • ${moods.size} days tracked",
+            "Daymoji • ${moods.size} days tracked",
             IMAGE_SIZE / 2f,
             PADDING + 75f,
             subtitlePaint
@@ -213,7 +213,7 @@ object MosaicImageGenerator {
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText(
-            "Created with Mood Mosaic",
+            "Created with Daymoji",
             IMAGE_SIZE / 2f,
             IMAGE_SIZE - PADDING + 20f,
             footerPaint
@@ -314,7 +314,7 @@ object MosaicImageGenerator {
             textAlign = Paint.Align.CENTER
         }
         canvas.drawText(
-            "Created with Mood Mosaic",
+            "Created with Daymoji",
             width / 2f,
             height - 60f,
             footerPaint

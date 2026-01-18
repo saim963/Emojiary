@@ -38,7 +38,7 @@ fun OnboardingScreen(
     val pages = listOf(
         OnboardingPage(
             icon = Icons.Default.Mood,
-            title = "Welcome to MoodMosaic",
+            title = "Welcome to Daymoji",
             description = "Track your daily emotions with beautiful emojis and colors. Build emotional awareness one day at a time.",
             backgroundColor = listOf(Color(0xFF4ECDC4), Color(0xFF44A08D))
         ),

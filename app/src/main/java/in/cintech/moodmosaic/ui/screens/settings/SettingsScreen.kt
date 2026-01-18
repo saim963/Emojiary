@@ -1,6 +1,7 @@
 package `in`.cintech.moodmosaic.ui.screens.settings
 
 import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -34,19 +35,18 @@ fun SettingsScreen(
     onCycleTheme: () -> Unit,
     notificationsEnabled: Boolean,
     onToggleNotifications: (Boolean) -> Unit,
-    // Add ViewModel
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // State
     var isExporting by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
-
     val databaseSize = remember { BackupManager.getDatabaseSize(context) }
 
-    // File picker for import
+    // 1. IMPORT Launcher
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -57,9 +57,36 @@ fun SettingsScreen(
                 isImporting = false
 
                 result.onSuccess {
-                    Toast.makeText(context, "✅ Backup restored successfully!", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Backup restored! Restarting app...", Toast.LENGTH_LONG).show()
+                    // Restart app to reload DB connection
+                    // Using basic restart technique:
+                    val packageManager = context.packageManager
+                    val intent = packageManager.getLaunchIntentForPackage(context.packageName)
+                    val componentName = intent!!.component
+                    val mainIntent = Intent.makeRestartActivityTask(componentName)
+                    context.startActivity(mainIntent)
+                    Runtime.getRuntime().exit(0)
                 }.onFailure { error ->
-                    Toast.makeText(context, "❌ Import failed: ${error.message}", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Import failed: ${error.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    // 2. SAVE TO DEVICE (Download) Launcher
+    val saveLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri: Uri? ->
+        uri?.let {
+            scope.launch {
+                isExporting = true
+                val result = BackupManager.saveBackupToUri(context, it)
+                isExporting = false
+
+                result.onSuccess {
+                    Toast.makeText(context, "Saved successfully!", Toast.LENGTH_SHORT).show()
+                }.onFailure { error ->
+                    Toast.makeText(context, "Save failed: ${error.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
@@ -125,7 +152,6 @@ fun SettingsScreen(
 
             // Backup Section
             SettingsSection(title = "Backup & Restore") {
-                // Database size info
                 SettingsInfoItem(
                     icon = Icons.Default.Storage,
                     title = "Data Size",
@@ -134,20 +160,20 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Export button
+                // OPTION 1: Share (Existing)
                 SettingsButton(
-                    icon = Icons.Default.Upload,
-                    title = "Export Backup",
-                    subtitle = "Save your data to a file",
+                    icon = Icons.Default.Share,
+                    title = "Share Backup",
+                    subtitle = "Send via Email, WhatsApp, etc.",
                     isLoading = isExporting,
                     onClick = {
                         scope.launch {
                             isExporting = true
-                            val result = BackupManager.exportDatabase(context)
+                            val result = BackupManager.createShareableBackup(context)
                             isExporting = false
 
                             result.onSuccess { uri ->
-                                BackupManager.shareBackup(context, uri)
+                                BackupManager.shareBackupIntent(context, uri)
                             }.onFailure { error ->
                                 Toast.makeText(context, "Export failed: ${error.message}", Toast.LENGTH_LONG).show()
                             }
@@ -157,16 +183,29 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // OPTION 2: Save to Device (NEW)
+                SettingsButton(
+                    icon = Icons.Default.Save,
+                    title = "Save to Device",
+                    subtitle = "Save to Downloads folder",
+                    isLoading = isExporting, // reusing loading state
+                    onClick = {
+                        // This opens the system file picker to choose WHERE to save
+                        saveLauncher.launch(BackupManager.generateBackupFileName())
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Import button
                 SettingsButton(
-                    icon = Icons.Default.Download,
+                    icon = Icons.Default.Restore,
                     title = "Import Backup",
-                    subtitle = "Restore from a backup file",
+                    subtitle = "Restore data from file",
                     isLoading = isImporting,
                     onClick = { showImportDialog = true }
                 )
             }
-
             // Backup Instructions
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -201,7 +240,7 @@ fun SettingsScreen(
                             2. Share/Save the file to Google Drive, Email, etc.
                             
                             📥 To restore on new phone:
-                            1. Install MoodMosaic
+                            1. Install Daymoji
                             2. Go to Settings → Import Backup
                             3. Select your backup file
                             
@@ -256,7 +295,7 @@ fun SettingsScreen(
             },
             title = { Text("Restore Backup?") },
             text = {
-                Text("This will replace ALL your current mood data. This action cannot be undone.")
+                Text("This will replace ALL your current data. This action cannot be undone.")
             },
             confirmButton = {
                 Button(

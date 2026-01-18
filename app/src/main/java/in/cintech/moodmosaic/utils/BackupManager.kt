@@ -3,7 +3,7 @@ package `in`.cintech.moodmosaic.utils
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
+import android.util.Log
 import androidx.core.content.FileProvider
 import `in`.cintech.moodmosaic.data.local.MoodDatabase
 import kotlinx.coroutines.Dispatchers
@@ -16,39 +16,62 @@ import java.util.*
 
 object BackupManager {
 
-    private const val BACKUP_FILE_NAME = "moodmosaic_backup"
+    private const val BACKUP_FILE_PREFIX = "daymoji_backup_"
     private const val BACKUP_EXTENSION = ".db"
 
+    fun generateBackupFileName(): String {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        return "$BACKUP_FILE_PREFIX$timestamp$BACKUP_EXTENSION"
+    }
+
     /**
-     * Export database to a shareable file
+     * ✅ FIX: Robust Checkpoint
+     * Forces Room to write all temporary data (-wal file) into the main .db file.
+     * We actully read the cursor to ensure the operation completes.
      */
-    suspend fun exportDatabase(context: Context): Result<Uri> = withContext(Dispatchers.IO) {
+    private fun checkpointDatabase(context: Context) {
         try {
-            val dbFile = context.getDatabasePath(MoodDatabase.DATABASE_NAME)
-
-            if (!dbFile.exists()) {
-                return@withContext Result.failure(Exception("Database not found"))
+            val db = MoodDatabase.getDatabase(context)
+            // Execute the checkpoint and consume the result to ensure it finishes
+            val cursor = db.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)")
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    val a = cursor.getInt(0)
+                    val b = cursor.getInt(1)
+                    val c = cursor.getInt(2)
+                    Log.d("BackupManager", "Checkpoint result: $a $b $c")
+                }
+                cursor.close()
             }
+        } catch (e: Exception) {
+            Log.e("BackupManager", "Checkpoint failed", e)
+        }
+    }
 
-            // Close database connections
-            MoodDatabase.getDatabase(context).close()
+    suspend fun createShareableBackup(context: Context): Result<Uri> = withContext(Dispatchers.IO) {
+        try {
+            // 1. Force data merge
+            checkpointDatabase(context)
 
-            // Create backup directory
+            val dbFile = context.getDatabasePath(MoodDatabase.DATABASE_NAME)
+            if (!dbFile.exists()) return@withContext Result.failure(Exception("Database not found"))
+
+            // 2. Create temp file
             val backupDir = File(context.cacheDir, "backups")
-            backupDir.mkdirs()
+            if (!backupDir.exists()) backupDir.mkdirs()
 
-            // Create backup file with timestamp
-            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-            val backupFile = File(backupDir, "${BACKUP_FILE_NAME}_$timestamp$BACKUP_EXTENSION")
+            val backupFile = File(backupDir, generateBackupFileName())
 
-            // Copy database to backup file
-            FileInputStream(dbFile).use { input ->
-                FileOutputStream(backupFile).use { output ->
+            // 3. Copy
+            dbFile.inputStream().use { input ->
+                backupFile.outputStream().use { output ->
                     input.copyTo(output)
                 }
             }
 
-            // Get URI for sharing
+            // 4. Verify file size (Debug)
+            Log.d("BackupManager", "Exported file size: ${backupFile.length()} bytes")
+
             val uri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -61,47 +84,71 @@ object BackupManager {
         }
     }
 
-    /**
-     * Share the backup file
-     */
-    fun shareBackup(context: Context, uri: Uri) {
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "application/octet-stream"
-            putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "MoodMosaic Backup")
-            putExtra(Intent.EXTRA_TEXT, "My MoodMosaic data backup. Import this file in MoodMosaic app on your new device.")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        context.startActivity(Intent.createChooser(intent, "Share Backup"))
-    }
-
-    /**
-     * Import database from URI
-     */
-    suspend fun importDatabase(context: Context, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun saveBackupToUri(context: Context, targetUri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         try {
+            checkpointDatabase(context)
+
             val dbFile = context.getDatabasePath(MoodDatabase.DATABASE_NAME)
 
-            // Close database connections
-            MoodDatabase.getDatabase(context).close()
-
-            // Copy imported file to database location
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(dbFile).use { output ->
+            context.contentResolver.openOutputStream(targetUri)?.use { output ->
+                dbFile.inputStream().use { input ->
                     input.copyTo(output)
                 }
             }
-
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Get database file size
-     */
+    suspend fun importDatabase(context: Context, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            // 1. Aggressively close the database
+            val db = MoodDatabase.getDatabase(context)
+            if (db.isOpen) {
+                db.close()
+            }
+
+            val dbFile = context.getDatabasePath(MoodDatabase.DATABASE_NAME)
+
+            // 2. Delete ALL potential Room files to prevent corruption
+            val walFile = File(dbFile.path + "-wal")
+            val shmFile = File(dbFile.path + "-shm")
+
+            if (dbFile.exists()) dbFile.delete()
+            if (walFile.exists()) walFile.delete()
+            if (shmFile.exists()) shmFile.delete()
+
+            // 3. Copy new file
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                dbFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            } ?: return@withContext Result.failure(Exception("Cannot read backup file"))
+
+            // 4. Validate import
+            if (dbFile.length() == 0L) {
+                return@withContext Result.failure(Exception("Imported file is empty"))
+            }
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(e)
+        }
+    }
+
+
+    fun shareBackupIntent(context: Context, uri: Uri) {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/octet-stream"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "Daymoji Backup")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(Intent.createChooser(intent, "Share Backup"))
+    }
+
     fun getDatabaseSize(context: Context): String {
         val dbFile = context.getDatabasePath(MoodDatabase.DATABASE_NAME)
         return if (dbFile.exists()) {

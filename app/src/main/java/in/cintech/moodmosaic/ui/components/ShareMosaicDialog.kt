@@ -46,7 +46,7 @@ private fun MosaicPreview(bitmap: Bitmap) {
     ) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = "Mosaic Preview",
+            contentDescription = "Daymoji Preview",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Fit
         )
@@ -205,7 +205,7 @@ private suspend fun shareImage(
         val cachePath = File(context.cacheDir, "images")
         cachePath.mkdirs()
 
-        val fileName = "mood_mosaic_${yearMonth.year}_${yearMonth.monthValue}.png"
+        val fileName = "daymoji${yearMonth.year}_${yearMonth.monthValue}.png"
         val file = File(cachePath, fileName)
 
         FileOutputStream(file).use { stream ->
@@ -224,17 +224,17 @@ private suspend fun shareImage(
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(
                 Intent.EXTRA_TEXT,
-                "My mood mosaic for ${yearMonth.month.getDisplayName(
+                "Check out my month on Daymoji! \uD83C\uDFA8 ${yearMonth.month.getDisplayName(
                     TextStyle.FULL,
                     Locale.getDefault()
-                )} ${yearMonth.year} 🎨\n\n#MoodMosaic #MentalHealth"
+                )} ${yearMonth.year} 🎨\n\n#Daymoji #MentalHealth"
             )
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
         withContext(Dispatchers.Main) {
             // ✅ FIX: Create chooser and grant permission to all apps
-            val chooser = Intent.createChooser(shareIntent, "Share your Mood Mosaic")
+            val chooser = Intent.createChooser(shareIntent, "Share your Daymoji")
 
             // Grant permission to all apps that can handle this intent
             val resInfoList = context.packageManager.queryIntentActivities(

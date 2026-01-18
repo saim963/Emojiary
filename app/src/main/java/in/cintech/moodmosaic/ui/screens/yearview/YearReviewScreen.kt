@@ -141,7 +141,7 @@ private suspend fun shareYearMosaic(
         val cachePath = File(context.cacheDir, "images")
         cachePath.mkdirs()
 
-        val fileName = "mood_mosaic_year_$year.png"
+        val fileName = "daymoji_year_$year.png"
         val file = File(cachePath, fileName)
 
         FileOutputStream(file).use { stream ->
@@ -159,7 +159,7 @@ private suspend fun shareYearMosaic(
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(
                 Intent.EXTRA_TEXT,
-                "My $year Year in Pixels 🎨\n\n${moods.size} days of feelings tracked!\n\n#MoodMosaic #YearInPixels #MentalHealth"
+                "My $year Year in Pixels 🎨\n\n${moods.size} days of feelings tracked!\n\n#Daymoji #YearInPixels #MentalHealth"
             )
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
