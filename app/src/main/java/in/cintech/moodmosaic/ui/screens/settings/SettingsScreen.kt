@@ -1,8 +1,12 @@
 package `in`.cintech.moodmosaic.ui.screens.settings
 
 import android.app.Activity
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,6 +29,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import `in`.cintech.moodmosaic.data.local.ThemeMode
 import `in`.cintech.moodmosaic.utils.BackupManager
 import `in`.cintech.moodmosaic.ui.screens.settings.SettingsViewModel
+import `in`.cintech.moodmosaic.widget.MoodWidgetReceiver
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,6 +144,44 @@ fun SettingsScreen(
                 )
             }
 
+            // Widget Section
+            SettingsSection(title = "Widget") {
+                val context = LocalContext.current
+                val appWidgetManager = remember { AppWidgetManager.getInstance(context) }
+
+                SettingsButton(
+                    icon = Icons.Default.Widgets,
+                    title = "Add to Home Screen",
+                    subtitle = "Pin the Mood Widget to your home screen",
+                    onClick = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                                val myProvider = ComponentName(context, MoodWidgetReceiver::class.java)
+
+                                // ✅ Create the callback Intent
+                                val successIntent = Intent(context, MoodWidgetReceiver::class.java).apply {
+                                    action = "ACTION_WIDGET_PINNED"
+                                }
+
+                                val successCallback = PendingIntent.getBroadcast(
+                                    context,
+                                    0,
+                                    successIntent,
+                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                                )
+
+                                // Request Pin
+                                appWidgetManager.requestPinAppWidget(myProvider, null, successCallback)
+
+                            } else {
+                                Toast.makeText(context, "Pinning not supported by your launcher", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Requires Android 8.0+", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                )
+            }
             // Notifications Section
             SettingsSection(title = "Notifications") {
                 SettingsSwitchItem(

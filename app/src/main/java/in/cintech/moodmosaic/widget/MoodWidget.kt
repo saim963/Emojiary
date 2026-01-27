@@ -33,8 +33,7 @@ import java.util.*
 import androidx.glance.action.actionParametersOf
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.action.ActionParameters
-
-private val Context.dataStore by preferencesDataStore(name = "settings")
+import `in`.cintech.moodmosaic.data.local.dataStore
 
 class MoodWidget : GlanceAppWidget() {
 
@@ -162,7 +161,6 @@ fun MoodWidgetContent(data: WidgetData, isDarkMode: Boolean = false) {
             .wrapContentSize()
             .cornerRadius(20.dp)
             .background(backgroundColor)
-//            .clickable(actionStartActivity<MainActivity>())
             .clickable(
                 actionStartActivity<MainActivity>(
                     actionParametersOf(
