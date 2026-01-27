@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import `in`.cintech.moodmosaic.data.repository.MoodRepository
-import `in`.cintech.moodmosaic.domain.model.MoodEntry
 import `in`.cintech.moodmosaic.domain.model.toDomain
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

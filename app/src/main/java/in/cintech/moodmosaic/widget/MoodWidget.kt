@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.action.actionStartActivity
@@ -28,10 +27,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle as DateTextStyle
-import java.util.*
 import androidx.glance.action.actionParametersOf
-import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.action.ActionParameters
 import `in`.cintech.moodmosaic.data.local.dataStore
 

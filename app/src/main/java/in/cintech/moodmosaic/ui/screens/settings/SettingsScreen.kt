@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import `in`.cintech.moodmosaic.data.local.ThemeMode
 import `in`.cintech.moodmosaic.utils.BackupManager
-import `in`.cintech.moodmosaic.ui.screens.settings.SettingsViewModel
 import `in`.cintech.moodmosaic.widget.MoodWidgetReceiver
+import `in`.cintech.moodmosaic.BuildConfig
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -317,7 +317,7 @@ fun SettingsScreen(
                 SettingsInfoItem(
                     icon = Icons.Default.Info,
                     title = "Version",
-                    value = "1.0.0"
+                    value = BuildConfig.VERSION_NAME
                 )
             }
 
