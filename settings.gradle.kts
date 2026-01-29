@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Mood Mosaic"
+rootProject.name = "Daymoji"
 include(":app")
  

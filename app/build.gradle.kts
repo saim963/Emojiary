@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "in.cintech.moodmosaic"
+    namespace = "in.cintech.daymoji"
     compileSdk = 35
 
     defaultConfig {
